@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using PocTresCamadas.Api.Configurations;
 using PocTresCamadas.Data.Context;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,6 +14,10 @@ builder.Services.AddDbContext<MeuDbContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
+
+builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
+builder.Services.ResolveDependencies();
 
 var app = builder.Build();
 
