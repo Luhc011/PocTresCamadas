@@ -3,16 +3,17 @@ using Microsoft.AspNetCore.Mvc;
 using PocTresCamadas.Api.ViewModels;
 using PocTresCamadas.Business.Interfaces;
 using PocTresCamadas.Business.Models;
-using PocTresCamadas.Data.Repository;
+using System.Net;
 
 namespace PocTresCamadas.Api.Controllers;
 
+[Route("api/fornecedores")]
 public class FornecedoresControler : MainController
 {
     private readonly IFornecedorRepository _fornecedorRepository;
     private readonly IFornecedorService _fornecedorService;
     private readonly IMapper _mapper;
-    public FornecedoresControler(IFornecedorRepository fornecedorRepository, IFornecedorService fornecedorService, IMapper mapper)
+    public FornecedoresControler(IFornecedorRepository fornecedorRepository, IFornecedorService fornecedorService, IMapper mapper, INotificador notificador) : base(notificador)
     {
         _fornecedorRepository = fornecedorRepository;
         _fornecedorService = fornecedorService;
@@ -42,7 +43,7 @@ public class FornecedoresControler : MainController
 
         await _fornecedorService.Adicionar(_mapper.Map<Fornecedor>(fornecedorViewModel));
 
-        return CustomResponse(fornecedorViewModel);
+        return CustomResponse(HttpStatusCode.Created, fornecedorViewModel);
     }
 
     [HttpPut("{id:guid}")]
@@ -58,7 +59,7 @@ public class FornecedoresControler : MainController
 
         await _fornecedorService.Atualizar(_mapper.Map<Fornecedor>(fornecedorViewModel));
 
-        return CustomResponse(fornecedorViewModel);
+        return CustomResponse(HttpStatusCode.NoContent);
     }
 
     [HttpDelete("{id:guid}")]
@@ -66,7 +67,7 @@ public class FornecedoresControler : MainController
     {
         await _fornecedorService.Remover(id);
 
-        return CustomResponse();
+        return CustomResponse(HttpStatusCode.NoContent);
     }
 
     private async Task<FornecedorViewModel> ObterFornecedor(Guid id)

@@ -3,15 +3,17 @@ using Microsoft.AspNetCore.Mvc;
 using PocTresCamadas.Api.ViewModels;
 using PocTresCamadas.Business.Interfaces;
 using PocTresCamadas.Business.Models;
+using System.Net;
 
 namespace PocTresCamadas.Api.Controllers;
 
+[Route("api/produtos")]
 public class ProdutosController : MainController
 {
     private readonly IProdutoRepository _produtoRepository;
     private readonly IProdutoService _produtoService;
     private readonly IMapper _mapper;
-    public ProdutosController(IProdutoRepository produtoRepository, IProdutoService produtoService, IMapper mapper)
+    public ProdutosController(IProdutoRepository produtoRepository, IProdutoService produtoService, IMapper mapper, INotificador notificador) : base(notificador)
     {
         _produtoRepository = produtoRepository;
         _produtoService = produtoService;
@@ -41,7 +43,7 @@ public class ProdutosController : MainController
 
         await _produtoService.Adicionar(_mapper.Map<Produto>(produtoViewModel));
 
-        return CustomResponse(produtoViewModel);
+        return CustomResponse(HttpStatusCode.Created, produtoViewModel);
     }
 
     [HttpPut("{id:guid}")]
@@ -65,7 +67,7 @@ public class ProdutosController : MainController
 
         await _produtoService.Atualizar(_mapper.Map<Produto>(produtoAtualizacao));
 
-        return CustomResponse();
+        return CustomResponse(HttpStatusCode.NoContent);
     }
 
     [HttpDelete("{id:guid}")]
@@ -77,7 +79,7 @@ public class ProdutosController : MainController
 
         await _produtoService.Remover(id);
 
-        return CustomResponse();
+        return CustomResponse(HttpStatusCode.NoContent);
     }
 
     private async Task<ProdutoViewModel> ObterProduto(Guid id)

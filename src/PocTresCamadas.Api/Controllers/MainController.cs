@@ -1,46 +1,58 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using PocTresCamadas.Business.Interfaces;
+using PocTresCamadas.Business.Notiticacoes;
+using System.Net;
 
 namespace PocTresCamadas.Api.Controllers;
 
 [ApiController]
 public abstract class MainController : ControllerBase
 {
-    protected bool OperacaoValida()
+    private readonly INotificador _notificador;
+
+    protected MainController(INotificador notificador)
     {
-        return !ModelState.Values.SelectMany(m => m.Errors).Any();
+        _notificador = notificador;
     }
 
-    protected ActionResult CustomResponse(object? result = null)
+    protected bool OperacaoValida()
+    {
+        return !_notificador.TemNotificacao();
+    }
+
+    protected ActionResult CustomResponse(HttpStatusCode statusCode = HttpStatusCode.OK, object? result = null)
     {
         if (OperacaoValida())
+            return new ObjectResult(result) { StatusCode = (int)statusCode };
+
+        return BadRequest(new
         {
-            return Ok(result);
-        }
-        else
-        {
-            return BadRequest(new
-            {
-                errors = ModelState.Values.SelectMany(m => m.Errors).Select(e => e.ErrorMessage)
-            });
-        }
+            errors = _notificador.ObterNotificacoes().Select(n => n.Mensagem)
+        });
     }
 
     protected ActionResult CustomResponse(ModelStateDictionary modelState)
     {
         if (!modelState.IsValid)
-        {
-            foreach (var error in modelState.Values.SelectMany(m => m.Errors))
-            {
-                //AdicionarErroProcessamento(error.ErrorMessage);
-            }
-        }
+            NotificarErroModelInvalida(modelState);
 
         return CustomResponse();
     }
 
+    protected void NotificarErroModelInvalida(ModelStateDictionary modelState)
+    {
+        var erros = modelState.Values.SelectMany(m => m.Errors);
+
+        foreach (var erro in erros)
+        {
+            var errorMsg = erro.Exception == null ? erro.ErrorMessage : erro.Exception.Message;
+            NotificarErro(errorMsg);
+        }
+    }
+
     protected void NotificarErro(string mensagem)
     {
-        ModelState.AddModelError(string.Empty, mensagem);
+        _notificador.Handle(new Notificacao(mensagem));
     }
 }
